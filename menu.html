@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Universal Pro | Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --primary: #ff4d94;
+            --secondary: #24243e;
+            --glass: rgba(255, 255, 255, 0.07);
+            --border: rgba(255, 255, 255, 0.15);
+            --xp-color: #00d2ff;
+            --success: #00ff88;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Montserrat', sans-serif; }
+
+        body {
+            background: #080710;
+            color: white;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 240px;
+            background: rgba(0, 0, 0, 0.85);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            padding: 20px 10px;
+            backdrop-filter: blur(20px);
+            z-index: 10;
+        }
+
+        .sidebar-logo {
+            font-weight: 900; color: var(--primary); text-align: center;
+            margin-bottom: 35px; font-size: 1.3rem; text-shadow: 0 0 10px rgba(255, 77, 148, 0.3);
+        }
+
+        .nav-item {
+            width: 100%; padding: 14px 18px; margin-bottom: 8px;
+            display: flex; align-items: center; gap: 12px; border-radius: 12px;
+            cursor: pointer; transition: 0.3s; color: #777; font-weight: 600; text-decoration: none;
+        }
+
+        .nav-item:hover, .nav-item.active {
+            background: var(--glass); color: white; border-left: 4px solid var(--primary);
+        }
+
+        /* Layout */
+        main {
+            flex: 1;
+            padding: 25px;
+            display: grid;
+            grid-template-columns: 1fr 350px;
+            gap: 25px;
+            background: radial-gradient(circle at 10% 10%, #1a1025 0%, #080710 100%);
+            overflow-y: auto;
+        }
+
+        .content-left { display: flex; flex-direction: column; gap: 20px; }
+
+        /* Profile Block */
+        .top-stats-block {
+            background: var(--glass);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 30px;
+            backdrop-filter: blur(10px);
+        }
+
+        .user-main { display: flex; align-items: center; gap: 25px; margin-bottom: 25px; }
+
+        .avatar-box { position: relative; width: 110px; height: 110px; cursor: pointer; }
+        .avatar-img { width: 100%; height: 100%; border-radius: 20px; border: 2px solid var(--primary); object-fit: cover; }
+
+        .faceit-lvl-circle {
+            position: absolute; top: -10px; right: -10px;
+            width: 40px; height: 40px; background: #111;
+            border: 3px solid #fff; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 900; font-size: 1.1rem; box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            z-index: 2;
+        }
+
+        .nick-container { display: flex; align-items: center; gap: 10px; }
+        #u-nick { font-size: 1.8rem; font-weight: 900; }
+        #u-nick-input { background: transparent; border: none; border-bottom: 2px solid var(--primary); color: white; font-size: 1.8rem; font-weight: 900; outline: none; display: none; width: 220px; }
+        
+        .id-badge { color: #555; font-size: 0.75rem; margin-top: 2px; font-weight: 600; }
+
+        /* Clan badge - new */
+        .clan-badge {
+            margin-top: 5px;
+            font-size: 0.8rem;
+            color: var(--primary);
+            background: rgba(255, 77, 148, 0.1);
+            padding: 4px 10px;
+            border-radius: 20px;
+            display: inline-block;
+        }
+        .clan-badge i { margin-right: 5px; }
+
+        /* Bars */
+        .bars-container { margin-top: 15px; display: flex; flex-direction: column; gap: 12px; }
+        .bar-group { display: flex; flex-direction: column; gap: 6px; }
+        .bar-bg { height: 8px; background: rgba(255,255,255,0.05); border-radius: 10px; overflow: hidden; }
+        .bar-fill { width: 0%; height: 100%; transition: 1.5s cubic-bezier(0.17, 0.67, 0.83, 0.67); }
+        
+        #elo-fill { background: linear-gradient(90deg, #ff4d94, #ff8dc0); }
+        #xp-fill { background: linear-gradient(90deg, #00d2ff, #3a7bd5); }
+
+        .bar-info { display: flex; justify-content: space-between; font-size: 0.65rem; color: #666; font-weight: 800; text-transform: uppercase; }
+
+        /* Stats Grid */
+        .faceit-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-top: 25px;
+        }
+
+        .stat-card {
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--border);
+            padding: 20px;
+            border-radius: 18px;
+            text-align: center;
+        }
+        .stat-card span { color: #555; font-size: 0.65rem; text-transform: uppercase; font-weight: 800; display: block; margin-bottom: 5px; }
+        .stat-card h2 { font-size: 1.4rem; color: #fff; font-weight: 900; }
+
+        .history-box {
+            background: var(--glass);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 30px;
+            flex-grow: 1;
+            min-height: 400px;
+        }
+
+        #match-history-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            max-height: 500px;
+            overflow-y: auto;
+            padding-right: 10px;
+        }
+
+        #match-history-list::-webkit-scrollbar { width: 5px; }
+        #match-history-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
+
+        .history-item {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 18px 25px; background: rgba(255,255,255,0.03); border-radius: 18px;
+            border-left: 5px solid #444;
+            transition: 0.3s;
+        }
+        .history-item:hover { background: rgba(255,255,255,0.06); transform: translateX(5px); }
+        .win { border-left-color: #00ff88; box-shadow: -5px 0 15px rgba(0, 255, 136, 0.1); }
+        .loss { border-left-color: #ff4d4d; box-shadow: -5px 0 15px rgba(255, 77, 77, 0.1); }
+
+        .right-side { display: flex; flex-direction: column; gap: 20px; }
+        .changelog-box { background: var(--glass); border: 1px solid var(--border); border-radius: 20px; padding: 25px; flex: 1; }
+        .log-item { background: rgba(255, 255, 255, 0.02); margin-bottom: 12px; padding: 15px; border-radius: 12px; border-left: 4px solid var(--primary); }
+        .log-item h4 { color: var(--primary); font-size: 0.9rem; margin-bottom: 4px; }
+        .log-item p { font-size: 0.8rem; color: #aaa; line-height: 1.4; }
+
+        #avatar-input { display: none; }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <div class="sidebar-logo">UNIVERSAL PRO</div>
+        <a href="#" class="nav-item active"><i class="fa-solid fa-user"></i> Профиль</a>
+        <a href="play.html" class="nav-item"><i class="fa-solid fa-gamepad"></i> Играть</a>
+        <a href="friends.html" class="nav-item"><i class="fa-solid fa-users"></i> Друзья</a>
+        <a href="clans.html" class="nav-item"><i class="fa-solid fa-shield-halved"></i> Кланы</a>
+        <a href="settings.html" class="nav-item"><i class="fa-solid fa-gear"></i> Настройки</a>
+        <div class="nav-item" style="margin-top: auto;" onclick="logout()"><i class="fa-solid fa-right-from-bracket"></i> Выход</div>
+    </div>
+
+    <main>
+        <div class="content-left">
+            <div id="tab-profile">
+                <div class="top-stats-block">
+                    <div class="user-main">
+                        <div class="avatar-box" onclick="triggerAvatarUpload()">
+                            <img id="u-avatar" src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" class="avatar-img">
+                            <div class="faceit-lvl-circle" id="u-faceit-lvl">1</div>
+                            <input type="file" id="avatar-input" accept="image/*">
+                        </div>
+                        <div class="user-details" style="flex: 1;">
+                            <div class="nick-container">
+                                <span id="u-nick">...</span>
+                                <input type="text" id="u-nick-input" maxlength="16">
+                                <i class="fa-solid fa-pen-to-square edit-icon" id="nick-edit-trigger" style="color:var(--primary); cursor:pointer; font-size:0.9rem;"></i>
+                            </div>
+                            <div class="id-badge">ID: <span id="u-skid">00000000</span></div>
+                            <!-- Clan badge -->
+                            <div class="clan-badge" id="user-clan" style="display: none;">
+                                <i class="fa-solid fa-shield-halved"></i> <span id="clan-name"></span> [<span id="clan-tag"></span>]
+                            </div>
+                            
+                            <div class="bars-container">
+                                <div class="bar-group">
+                                    <div class="bar-info">
+                                        <span>Faceit Level <span id="curr-lvl">1</span></span>
+                                        <span id="elo-needed-text">Next: 501 ELO</span>
+                                    </div>
+                                    <div class="bar-bg">
+                                        <div class="bar-fill" id="elo-fill"></div>
+                                    </div>
+                                </div>
+                                <div class="bar-group">
+                                    <div class="bar-info">
+                                        <span style="color: var(--xp-color)">Account Rank <span id="u-acc-lvl">1</span></span>
+                                        <span><span id="u-xp-val">0</span> / 1000 XP</span>
+                                    </div>
+                                    <div class="bar-bg">
+                                        <div class="bar-fill" id="xp-fill"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="faceit-grid">
+                        <div class="stat-card"><span>Global Rank</span><h2 id="u-rank">#1</h2></div>
+                        <div class="stat-card"><span>ELO Points</span><h2 id="u-elo">0</h2></div>
+                        <div class="stat-card"><span>Matches</span><h2 id="u-matches">0</h2></div>
+                    </div>
+                </div>
+
+                <div class="history-box" style="margin-top:20px;">
+                    <h3 style="font-weight: 900; margin-bottom: 25px; font-size: 1.2rem; letter-spacing: 1px; color: #fff;">
+                        <i class="fa-solid fa-history" style="color:var(--primary); margin-right: 10px;"></i> ПОСЛЕДНИЕ МАТЧИ
+                    </h3>
+                    <div id="match-history-list">
+                        <div style="color: #444; text-align: center; padding: 20px;">Загрузка истории...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="right-side">
+            <div class="changelog-box">
+                <h3 style="margin-bottom: 20px; font-weight: 900;"><i class="fa-solid fa-clock-rotate-left"></i> CHANGE LOGS</h3>
+                <div id="changelog-list"></div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const SUPABASE_URL = 'https://tkssxjolplmcfsbcjwme.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRrc3N4am9scGxtY2ZzYmNqd21lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIwMjkwMzQsImV4cCI6MjA4NzYwNTAzNH0.ZQ978i3haK8pPOouvnH4sgK7dxFKRby_UfaOgzP1VvY';
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        const currentId = localStorage.getItem('pro_user_id'); 
+        if (!currentId) window.location.href = 'index.html';
+
+        const levels = [
+            { lvl: 1, min: 0, max: 500, color: '#fff' },
+            { lvl: 2, min: 501, max: 750, color: '#1ce32d' },
+            { lvl: 3, min: 751, max: 900, color: '#1ce32d' },
+            { lvl: 4, min: 901, max: 1050, color: '#ffde00' },
+            { lvl: 5, min: 1051, max: 1200, color: '#ffde00' },
+            { lvl: 6, min: 1201, max: 1350, color: '#ffde00' },
+            { lvl: 7, min: 1351, max: 1530, color: '#ffde00' },
+            { lvl: 8, min: 1531, max: 1750, color: '#ff7b00' },
+            { lvl: 9, min: 1751, max: 2000, color: '#ff7b00' },
+            { lvl: 10, min: 2001, max: 999999, color: '#ff0000' }
+        ];
+
+        function updateEloUI(elo) {
+            const eloVal = parseInt(elo) || 0;
+            let current = levels.find(l => eloVal >= l.min && eloVal <= l.max);
+            if (!current) current = levels[0];
+
+            document.getElementById('u-faceit-lvl').innerText = current.lvl;
+            document.getElementById('u-faceit-lvl').style.borderColor = current.color;
+            document.getElementById('curr-lvl').innerText = current.lvl;
+            document.getElementById('u-elo').innerText = eloVal;
+
+            if (current.lvl < 10) {
+                let range = current.max - current.min;
+                let currentProgress = eloVal - current.min;
+                let percent = (currentProgress / range) * 100;
+                document.getElementById('elo-fill').style.width = Math.min(Math.max(percent, 2), 100) + "%";
+                document.getElementById('elo-needed-text').innerText = `Next: ${current.max - eloVal + 1} ELO`;
+            } else {
+                document.getElementById('elo-fill').style.width = "100%";
+                document.getElementById('elo-needed-text').innerText = "MAX LEVEL REACHED";
+            }
+        }
+
+        async function loadMatchHistory(gameId) {
+            const { data: matches, error } = await _supabase
+                .from('match_history')
+                .select('*')
+                .eq('custom_user_id', gameId)
+                .order('created_at', { ascending: false });
+            
+            const list = document.getElementById('match-history-list');
+            if (error) {
+                console.error('Ошибка загрузки истории:', error);
+                list.innerHTML = `<div style="color:#ff4d4d;text-align:center;padding:20px;">Ошибка загрузки истории</div>`;
+                return;
+            }
+            if (!matches || matches.length === 0) { 
+                list.innerHTML = `<div style="color:#444;text-align:center;padding:20px;">Матчи не найдены</div>`; 
+                return; 
+            }
+            list.innerHTML = matches.map(match => `
+                <div class="history-item ${match.is_win ? 'win' : 'loss'}">
+                    <div>
+                        <strong style="font-size: 1.1rem;">${match.map_name || 'Mirage'}</strong> 
+                        <span style="color:#555;margin-left:15px; font-weight: 600;">${match.rounds || '—'}</span>
+                    </div>
+                    <div style="font-weight:900; font-size: 1.1rem; color:${match.is_win?'#00ff88':'#ff4d4d'}">
+                        ${match.elo_diff > 0 ? '+' : ''}${match.elo_diff} <span style="font-size: 0.7rem;">ELO</span>
+                    </div>
+                </div>`).join('');
+        }
+
+        async function loadUserClan() {
+            const { data: member } = await _supabase
+                .from('clan_members')
+                .select('clan_id, clans(name, tag)')
+                .eq('user_id', currentId)
+                .maybeSingle();
+            if (member) {
+                document.getElementById('user-clan').style.display = 'inline-block';
+                document.getElementById('clan-name').innerText = member.clans.name;
+                document.getElementById('clan-tag').innerText = member.clans.tag;
+            } else {
+                document.getElementById('user-clan').style.display = 'none';
+            }
+        }
+
+        async function loadData() {
+            const { data: user, error } = await _supabase.from('profiles').select('*').eq('id', currentId).single();
+            if (user) {
+                document.getElementById('u-nick').innerText = user.username || 'User';
+                document.getElementById('u-skid').innerText = user.sk_id || '00000000'; 
+                document.getElementById('u-matches').innerText = user.matches || 0;
+                document.getElementById('u-acc-lvl').innerText = user.account_lvl || 1;
+                document.getElementById('u-xp-val').innerText = user.account_xp || 0;
+                
+                updateEloUI(user.elo || 0);
+
+                setTimeout(() => { 
+                    document.getElementById('xp-fill').style.width = (Math.min((user.account_xp||0) / 1000 * 100, 100)) + "%"; 
+                }, 200);
+                
+                if (user.avatar_data) document.getElementById('u-avatar').src = user.avatar_data;
+                loadMatchHistory(user.sk_id);
+                loadUserClan(); // загружаем клан
+            }
+            
+            const { data: logs } = await _supabase.from('changelog').select('*').order('date', {ascending: false});
+            if (logs) document.getElementById('changelog-list').innerHTML = logs.map(l => `<div class="log-item"><h4>${l.title}</h4><p>${l.description}</p></div>`).join('');
+        }
+
+        const nickSpan = document.getElementById('u-nick'), nickInput = document.getElementById('u-nick-input'), editTrigger = document.getElementById('nick-edit-trigger');
+        if (editTrigger) editTrigger.onclick = () => { nickSpan.style.display='none'; nickInput.style.display='block'; nickInput.value=nickSpan.innerText; nickInput.focus(); };
+        
+        async function saveNick() {
+            const val = nickInput.value.trim();
+            if (val && val.length <= 16 && val !== nickSpan.innerText) {
+                nickSpan.innerText = val;
+                await _supabase.from('profiles').update({ username: val }).eq('id', currentId);
+            }
+            nickSpan.style.display='block'; nickInput.style.display='none';
+        }
+        nickInput.onblur = saveNick;
+        nickInput.onkeydown = (e) => { if (e.key === 'Enter') saveNick(); };
+
+        function triggerAvatarUpload() { document.getElementById('avatar-input').click(); }
+        document.getElementById('avatar-input').onchange = function(e) {
+            const file = e.target.files[0]; if (!file) return;
+            const reader = new FileReader();
+            reader.onloadend = async function() {
+                await _supabase.from('profiles').update({ avatar_data: reader.result }).eq('id', currentId);
+                document.getElementById('u-avatar').src = reader.result;
+            }; reader.readAsDataURL(file);
+        };
+
+        function logout() { localStorage.removeItem('pro_user_id'); window.location.href = 'index.html'; }
+        
+        loadData();
+    </script>
+</body>
+</html>

@@ -1,0 +1,1146 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Universal Pro | Lobby</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Montserrat', sans-serif;
+        }
+
+        :root {
+            --primary: #ff4d94;
+            --primary-glow: rgba(255, 77, 148, 0.4);
+            --gold: #ffd700;
+            --bg: #080710;
+            --glass: rgba(255, 255, 255, 0.07);
+            --border: rgba(255, 255, 255, 0.15);
+            --success: #00ff88;
+            --card-bg: rgba(20, 20, 30, 0.8);
+            --text-secondary: #777;
+        }
+
+        body {
+            background: var(--bg);
+            color: white;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+            background-image: radial-gradient(circle at 10% 10%, #1a1025 0%, #080710 100%);
+        }
+
+        /* Сайдбар */
+        .sidebar {
+            width: 240px;
+            background: rgba(0, 0, 0, 0.85);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            padding: 20px 10px;
+            backdrop-filter: blur(20px);
+            z-index: 1000;
+        }
+
+        .sidebar-logo {
+            font-weight: 900;
+            color: var(--primary);
+            text-align: center;
+            margin-bottom: 35px;
+            font-size: 1.3rem;
+            text-shadow: 0 0 10px rgba(255, 77, 148, 0.3);
+        }
+
+        .nav-item {
+            width: 100%;
+            padding: 14px 18px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: 0.3s;
+            color: #777;
+            font-weight: 600;
+            text-decoration: none;
+            background: none;
+            border: none;
+            text-align: left;
+            font-size: 1rem;
+        }
+
+        .nav-item:hover,
+        .nav-item.active {
+            background: var(--glass);
+            color: white;
+            border-left: 4px solid var(--primary);
+        }
+
+        /* Основной контент */
+        main {
+            flex: 1;
+            padding: 80px 25px 25px 25px;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        .screen {
+            display: none;
+            height: 100%;
+            flex-direction: column;
+            animation: fadeIn 0.4s ease;
+        }
+
+        .screen.active {
+            display: flex;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Шапка лобби */
+        .lobby-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            z-index: 5;
+            position: relative;
+        }
+
+        .lobby-header h2 {
+            font-weight: 900;
+            font-size: 2rem;
+            text-transform: uppercase;
+            background: linear-gradient(45deg, #fff, var(--primary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .mode-badge {
+            background: rgba(255, 77, 148, 0.15);
+            border: 1px solid var(--primary);
+            padding: 8px 30px;
+            border-radius: 40px;
+            font-weight: 900;
+            font-size: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            box-shadow: 0 0 20px rgba(255, 77, 148, 0.3);
+        }
+
+        /* Пинг и сервер */
+        .server-info {
+            position: absolute;
+            top: 20px;
+            right: 25px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border);
+            border-radius: 30px;
+            padding: 6px 18px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: var(--success);
+            backdrop-filter: blur(5px);
+            z-index: 20;
+        }
+
+        .server-info i {
+            margin-right: 6px;
+            color: var(--primary);
+        }
+
+        /* Счётчик игроков */
+        .player-count {
+            position: absolute;
+            top: 20px;
+            left: 25px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border);
+            border-radius: 30px;
+            padding: 6px 18px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: white;
+            backdrop-filter: blur(5px);
+            z-index: 20;
+        }
+
+        .player-count i {
+            margin-right: 6px;
+            color: var(--primary);
+        }
+
+        /* Сетка игроков */
+        .players-grid {
+            display: grid;
+            gap: 10px;
+            margin: 20px auto;
+            justify-content: center;
+            width: 100%;
+            max-width: 1000px;
+        }
+
+        .player-card {
+            width: 160px;
+            background: var(--card-bg);
+            border: 2px solid var(--border);
+            border-radius: 16px;
+            padding: 12px 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            backdrop-filter: blur(10px);
+            transition: 0.3s;
+            position: relative;
+        }
+
+        .player-card.host {
+            border-color: var(--gold);
+            box-shadow: 0 0 25px rgba(255, 215, 0, 0.3);
+        }
+
+        .player-card .avatar-wrapper {
+            position: relative;
+            width: 85px;
+            height: 85px;
+            margin-bottom: 8px;
+        }
+
+        .player-card img {
+            width: 100%;
+            height: 100%;
+            border-radius: 16px;
+            object-fit: cover;
+            border: 3px solid transparent;
+            background: #1a1a2a;
+        }
+
+        .player-card.host img {
+            border-color: var(--gold);
+        }
+
+        .player-card .crown-icon {
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            background: var(--gold);
+            color: #000;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+            border: 2px solid #fff;
+        }
+
+        .player-card .player-name {
+            font-weight: 900;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            text-align: center;
+            margin-bottom: 4px;
+            max-width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .player-card .player-status {
+            font-size: 0.6rem;
+            font-weight: 700;
+            color: var(--text-secondary);
+        }
+
+        .player-card .player-status.host-tag {
+            color: var(--gold);
+        }
+
+        .empty-card {
+            width: 160px;
+            height: 190px;
+            background: rgba(255, 255, 255, 0.02);
+            border: 2px dashed var(--border);
+            border-radius: 16px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #333;
+        }
+
+        .empty-card i {
+            font-size: 2.2rem;
+            margin-bottom: 8px;
+        }
+
+        .empty-card span {
+            font-weight: 700;
+            font-size: 0.65rem;
+            text-transform: uppercase;
+        }
+
+        /* Чат */
+        .chat-area {
+            position: absolute;
+            bottom: 20px;
+            left: 25px;
+            width: 280px;
+            height: 240px;
+            background: rgba(10, 10, 15, 0.95);
+            border-radius: 20px;
+            display: flex;
+            flex-direction: column;
+            border: 1px solid var(--border);
+            backdrop-filter: blur(15px);
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            z-index: 5;
+        }
+
+        .chat-header {
+            padding: 8px 16px;
+            background: rgba(0, 0, 0, 0.3);
+            border-bottom: 1px solid var(--border);
+            font-weight: 900;
+            font-size: 0.75rem;
+            color: var(--primary);
+            text-transform: uppercase;
+        }
+
+        #chat-log {
+            flex: 1;
+            overflow-y: auto;
+            padding: 8px;
+            font-size: 0.75rem;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .message-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 6px;
+            word-break: break-word;
+        }
+
+        .message-item .msg-author {
+            font-weight: 900;
+            color: var(--primary);
+            white-space: nowrap;
+        }
+
+        .message-item .msg-text {
+            color: #ddd;
+        }
+
+        .chat-input-area {
+            display: flex;
+            border-top: 1px solid var(--border);
+            padding: 6px 10px;
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .chat-input-area input {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border);
+            border-radius: 30px;
+            padding: 6px 12px;
+            color: white;
+            outline: none;
+            font-size: 0.75rem;
+        }
+
+        .chat-input-area i {
+            margin-left: 6px;
+            width: 32px;
+            height: 32px;
+            background: var(--primary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: 0.3s;
+            box-shadow: 0 5px 15px var(--primary-glow);
+        }
+
+        .chat-input-area i:hover {
+            transform: scale(1.1);
+        }
+
+        /* Кнопка старта */
+        .start-btn {
+            position: absolute;
+            bottom: 20px;
+            right: 25px;
+            background: linear-gradient(45deg, var(--primary), #ff7bb3);
+            border: none;
+            padding: 15px 40px;
+            border-radius: 50px;
+            color: white;
+            font-weight: 900;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            box-shadow: 0 10px 30px rgba(255, 77, 148, 0.5);
+            z-index: 10;
+        }
+
+        .start-btn:hover {
+            transform: scale(1.05);
+        }
+
+        .start-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        /* Экран голосования */
+        .vote-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            max-width: 900px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+
+        .map-card {
+            background: var(--card-bg);
+            border: 2px solid var(--border);
+            border-radius: 18px;
+            padding: 12px;
+            text-align: center;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .map-card:hover {
+            border-color: var(--primary);
+            background: rgba(255, 77, 148, 0.1);
+            transform: translateY(-5px);
+        }
+
+        .map-card.selected {
+            border-color: var(--primary);
+            box-shadow: 0 0 30px var(--primary-glow);
+        }
+
+        .map-card .map-image {
+            width: 100%;
+            height: 100px;
+            border-radius: 12px;
+            margin-bottom: 10px;
+            background-size: cover;
+            background-position: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            font-weight: 900;
+            color: white;
+            text-shadow: 2px 2px 0 #000;
+            image-rendering: pixelated;
+        }
+
+        .map-card h3 {
+            font-size: 1.2rem;
+            font-weight: 900;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+        }
+
+        .map-card .votes {
+            color: var(--success);
+            font-weight: 900;
+            font-size: 0.9rem;
+        }
+
+        /* Экран матча */
+        .match-anim {
+            text-align: center;
+            margin: auto;
+        }
+
+        .loader-ring {
+            width: 100px;
+            height: 100px;
+            border: 5px solid var(--glass);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 30px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Экран статистики (упрощённый) */
+        .stats-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+        }
+
+        .stats-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            background: var(--card-bg);
+            border-radius: 15px;
+            overflow: hidden;
+        }
+
+        .stats-table th {
+            padding: 12px;
+            background: rgba(0, 0, 0, 0.5);
+            color: var(--primary);
+            text-align: left;
+            font-size: 0.65rem;
+            text-transform: uppercase;
+        }
+
+        .stats-table td {
+            padding: 10px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .stats-table select,
+        .stats-table input {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: white;
+            padding: 5px;
+            width: 100%;
+            outline: none;
+            font-weight: 600;
+        }
+
+        .stats-table .elo-input {
+            width: 80px;
+        }
+
+        .winner-select {
+            background: rgba(0, 0, 0, 0.3);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 30px;
+            border: 1px solid var(--primary);
+            outline: none;
+            margin: 15px 0;
+            width: auto;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .rounds-input {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--primary);
+            border-radius: 30px;
+            color: white;
+            padding: 10px 20px;
+            margin-left: 15px;
+            outline: none;
+            font-weight: 700;
+            width: 120px;
+            text-align: center;
+        }
+
+        /* Модалка */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 2000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(8px);
+        }
+
+        .modal {
+            background: #151520;
+            padding: 30px;
+            border-radius: 30px;
+            border: 2px solid var(--primary);
+            text-align: center;
+            min-width: 350px;
+        }
+
+        .modal h3 {
+            font-weight: 900;
+            margin-bottom: 10px;
+            font-size: 1.3rem;
+        }
+
+        .modal p {
+            color: #aaa;
+            margin-bottom: 20px;
+        }
+
+        .m-btns {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+        }
+
+        .btn {
+            padding: 10px 30px;
+            border-radius: 40px;
+            border: none;
+            cursor: pointer;
+            font-weight: 800;
+            transition: 0.3s;
+            text-transform: uppercase;
+            font-size: 0.8rem;
+        }
+
+        .btn-confirm {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-cancel {
+            background: #252535;
+            color: #777;
+        }
+
+        .btn:hover {
+            transform: scale(1.05);
+        }
+
+        /* Прелоадер */
+        .loader {
+            text-align: center;
+            padding: 40px;
+            color: #777;
+        }
+    </style>
+</head>
+<body>
+    <!-- Сайдбар -->
+    <div class="sidebar">
+        <div class="sidebar-logo">UNIVERSAL PRO</div>
+        <button class="nav-item" onclick="confirmNav('menu')"><i class="fa-solid fa-user"></i> Профиль</button>
+        <button class="nav-item active" onclick="confirmNav('play')"><i class="fa-solid fa-gamepad"></i> Играть</button>
+        <button class="nav-item" onclick="confirmNav('friends')"><i class="fa-solid fa-users"></i> Друзья</button>
+        <button class="nav-item" onclick="confirmNav('clans')"><i class="fa-solid fa-shield-halved"></i> Кланы</button>
+        <button class="nav-item" onclick="confirmNav('settings')"><i class="fa-solid fa-gear"></i> Настройки</button>
+        <button class="nav-item" style="margin-top: auto;" onclick="confirmExit()"><i class="fa-solid fa-right-from-bracket"></i> Покинуть</button>
+    </div>
+
+    <main>
+        <div class="server-info" id="server-info">
+            <i class="fa-solid fa-server"></i> <span id="server-location">EU</span> · <i class="fa-solid fa-signal"></i> <span id="server-ping">40</span> ms
+        </div>
+        <div class="player-count" id="player-count">
+            <i class="fa-solid fa-users"></i> <span id="current-players">0</span>/<span id="max-players">0</span>
+        </div>
+
+        <!-- Экран лобби -->
+        <div id="scr-lobby" class="screen active">
+            <div class="lobby-header">
+                <h2>ЛОББИ <span id="lobby-id-display"></span></h2>
+                <div class="mode-badge" id="mode-display"></div>
+            </div>
+            <div class="players-grid" id="players-container">
+                <div class="loader">Загрузка игроков...</div>
+            </div>
+            <div class="chat-area">
+                <div class="chat-header">ЧАТ ЛОББИ</div>
+                <div id="chat-log"></div>
+                <div class="chat-input-area">
+                    <input type="text" id="chat-in" placeholder="Написать сообщение...">
+                    <i class="fa-solid fa-paper-plane" onclick="sendChat()"></i>
+                </div>
+            </div>
+            <button class="start-btn" id="start-match-btn" onclick="startVote()">НАЧАТЬ МАТЧ</button>
+        </div>
+
+        <!-- Экран голосования -->
+        <div id="scr-vote" class="screen">
+            <h2 style="text-align: center; font-weight: 900; margin: 80px 0 20px;">ГОЛОСОВАНИЕ ЗА КАРТУ</h2>
+            <div class="vote-grid" id="vote-grid"></div>
+            <button class="start-btn" id="confirm-vote-btn" onclick="confirmMap()" style="position: static; margin: 20px auto;">ПОДТВЕРДИТЬ</button>
+        </div>
+
+        <!-- Экран матча -->
+        <div id="scr-match" class="screen">
+            <div class="match-anim">
+                <div class="loader-ring"></div>
+                <h1 style="font-weight: 900; letter-spacing: 6px; color: var(--success);">МАТЧ ИДЁТ</h1>
+                <p style="color: #444; margin: 15px;">Система записывает данные. Не закрывайте вкладку.</p>
+                <button class="btn btn-cancel" style="margin-top: 40px;" onclick="confirmEndMatch()">ЗАВЕРШИТЬ МАТЧ</button>
+            </div>
+        </div>
+
+        <!-- Экран статистики (упрощённый) -->
+        <div id="scr-results" class="screen">
+            <div class="stats-container">
+                <h2 style="font-weight: 900;">ЗАПОЛНЕНИЕ СТАТИСТИКИ</h2>
+                <div style="display: flex; align-items: center; gap: 10px; margin: 15px 0;">
+                    <select id="winner-team" class="winner-select">
+                        <option value="A">ПОБЕДА КОМАНДЫ "A"</option>
+                        <option value="B">ПОБЕДА КОМАНДЫ "B"</option>
+                    </select>
+                    <input type="text" id="rounds" class="rounds-input" placeholder="Счёт (16:10)" value="16:10">
+                </div>
+                <table class="stats-table">
+                    <thead>
+                        <tr><th>ИГРОК</th><th>TEAM</th><th>ИЗМЕНЕНИЕ ELO</th></tr>
+                    </thead>
+                    <tbody id="stats-body"></tbody>
+                </table>
+                <button class="start-btn" style="position: static; margin: 20px auto;" onclick="confirmSaveStats()">СОХРАНИТЬ РЕЗУЛЬТАТЫ</button>
+            </div>
+        </div>
+    </main>
+
+    <!-- Модалка -->
+    <div id="modal-overlay" class="modal-overlay">
+        <div class="modal">
+            <h3 id="modal-title">Подтверждение</h3>
+            <p id="modal-text">Вы уверены?</p>
+            <div class="m-btns">
+                <button id="modal-confirm" class="btn btn-confirm">ДА</button>
+                <button onclick="closeModal()" class="btn btn-cancel">НЕТ</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        (async function() {
+            const SUPABASE_URL = 'https://tkssxjolplmcfsbcjwme.supabase.co';
+            const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRrc3N4am9scGxtY2ZzYmNqd21lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIwMjkwMzQsImV4cCI6MjA4NzYwNTAzNH0.ZQ978i3haK8pPOouvnH4sgK7dxFKRby_UfaOgzP1VvY';
+            const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+            const urlParams = new URLSearchParams(window.location.search);
+            const lobbyId = urlParams.get('id');
+            const isHost = urlParams.get('host') === 'true';
+            const currentUserId = localStorage.getItem('pro_user_id');
+
+            if (!currentUserId || !lobbyId) {
+                window.location.href = 'play.html';
+                return;
+            }
+
+            let myProfile = null;
+            let lobbyInfo = null;
+            let participants = [];
+            let selectedMap = null;
+            let voteCounts = {};
+            let matchMap = null;
+            let statsPlayers = []; // для экрана статистики
+
+            const mapsByMode = {
+                '1vs1': ['bridge', 'pool', 'temple', 'yard'],
+                '2vs2': ['sandstone', 'province', 'dune', 'hanami', 'breeze', 'rust'],
+                '5vs5': ['sandstone', 'province', 'dune', 'hanami', 'breeze', 'rust']
+            };
+
+            const mapColors = {
+                bridge: '#8B4513', pool: '#1E90FF', temple: '#DEB887', yard: '#228B22',
+                sandstone: '#C19A6B', province: '#A0522D', dune: '#F4A460',
+                hanami: '#FFB6C1', breeze: '#87CEEB', rust: '#CD5C5C',
+                default: '#555'
+            };
+
+            // Случайный пинг и локация
+            const serverLocations = ['EU', 'NA', 'ASIA', 'AU', 'SA'];
+            const randomPing = Math.floor(Math.random() * 60) + 20;
+            const randomLocation = serverLocations[Math.floor(Math.random() * serverLocations.length)];
+            document.querySelectorAll('[id^="server-location"]').forEach(el => el.innerText = randomLocation);
+            document.querySelectorAll('[id^="server-ping"]').forEach(el => el.innerText = randomPing);
+
+            function showScreen(screenId) {
+                document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+                document.getElementById(`scr-${screenId}`).classList.add('active');
+            }
+
+            function openModal(text, onConfirm) {
+                document.getElementById('modal-text').innerText = text;
+                document.getElementById('modal-overlay').style.display = 'flex';
+                document.getElementById('modal-confirm').onclick = () => {
+                    onConfirm();
+                    closeModal();
+                };
+            }
+
+            function closeModal() {
+                document.getElementById('modal-overlay').style.display = 'none';
+            }
+
+            window.confirmNav = function(page) {
+                let url = '';
+                if (page === 'menu') url = 'menu.html';
+                else if (page === 'play') url = 'play.html';
+                else if (page === 'friends') url = 'friends.html';
+                else if (page === 'clans') url = 'clans.html';
+                else if (page === 'settings') url = 'settings.html';
+                else return;
+                openModal('Выйти из лобби?', async () => {
+                    await supabase.from('lobby_participants').delete().eq('user_id', currentUserId).eq('lobby_id', lobbyId);
+                    window.location.href = url;
+                });
+            };
+
+            window.confirmExit = function() {
+                openModal('Покинуть лобби?', async () => {
+                    await supabase.from('lobby_participants').delete().eq('user_id', currentUserId).eq('lobby_id', lobbyId);
+                    window.location.href = 'menu.html';
+                });
+            };
+
+            async function registerSelf() {
+                const { data: existing } = await supabase
+                    .from('lobby_participants')
+                    .select('*')
+                    .eq('lobby_id', lobbyId)
+                    .eq('user_id', currentUserId);
+
+                if (existing.length === 0) {
+                    const { data: currentParts } = await supabase
+                        .from('lobby_participants')
+                        .select('slot_index')
+                        .eq('lobby_id', lobbyId);
+
+                    const busySlots = currentParts.map(p => p.slot_index);
+                    let mySlot = 0;
+                    while (busySlots.includes(mySlot)) mySlot++;
+                    if (mySlot < lobbyInfo.max_players) {
+                        await supabase.from('lobby_participants').insert({
+                            lobby_id: lobbyId,
+                            user_id: currentUserId,
+                            slot_index: mySlot
+                        });
+                    } else {
+                        alert('Лобби заполнено');
+                        window.location.href = 'play.html';
+                    }
+                }
+            }
+
+            async function loadParticipants() {
+                const { data } = await supabase
+                    .from('lobby_participants')
+                    .select('*, profiles(*)')
+                    .eq('lobby_id', lobbyId);
+                participants = data || [];
+                renderPlayers();
+                document.getElementById('current-players').innerText = participants.length;
+                document.getElementById('max-players').innerText = lobbyInfo.max_players;
+            }
+
+            function renderPlayers() {
+                const container = document.getElementById('players-container');
+                const max = lobbyInfo.max_players;
+                const cols = max === 10 ? 5 : (max === 4 ? 2 : 2);
+                container.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+
+                if (participants.length === 0) {
+                    container.innerHTML = '<div class="loader">Ожидание игроков...</div>';
+                    return;
+                }
+
+                let html = '';
+                for (let i = 0; i < max; i++) {
+                    const player = participants.find(p => p.slot_index === i);
+                    if (player) {
+                        const isMe = player.user_id === currentUserId;
+                        const isPlayerHost = player.user_id === lobbyInfo.host_id;
+                        html += `
+                            <div class="player-card ${isPlayerHost ? 'host' : ''}">
+                                <div class="avatar-wrapper">
+                                    <img src="${player.profiles.avatar_data || 'https://api.dicebear.com/7.x/avataaars/svg?seed='+player.profiles.username}">
+                                    ${isPlayerHost ? '<i class="fa-solid fa-crown crown-icon"></i>' : ''}
+                                </div>
+                                <div class="player-name">${player.profiles.username}</div>
+                                <div class="player-status ${isPlayerHost ? 'host-tag' : ''}">
+                                    ${isPlayerHost ? 'ХОСТ' : (isMe ? 'ВЫ' : '')}
+                                </div>
+                            </div>
+                        `;
+                    } else {
+                        html += `
+                            <div class="empty-card">
+                                <i class="fa-solid fa-user-plus"></i>
+                                <span>ОЖИДАНИЕ</span>
+                            </div>
+                        `;
+                    }
+                }
+                container.innerHTML = html;
+            }
+
+            // Чат
+            window.sendChat = async function() {
+                const input = document.getElementById('chat-in');
+                const text = input.value.trim();
+                if (!text) return;
+                await supabase.from('lobby_messages').insert({
+                    lobby_id: lobbyId,
+                    user_id: currentUserId,
+                    username: myProfile.username,
+                    text: text
+                });
+                input.value = '';
+            };
+
+            function handleNewMessage(payload) {
+                const msg = payload.new;
+                const log = document.getElementById('chat-log');
+                const msgDiv = document.createElement('div');
+                msgDiv.className = 'message-item';
+                msgDiv.innerHTML = `<span class="msg-author">${msg.username}:</span> <span class="msg-text">${msg.text}</span>`;
+                log.appendChild(msgDiv);
+                log.scrollTop = log.scrollHeight;
+            }
+
+            // Голосование
+            window.startVote = async function() {
+                if (!isHost) return;
+                if (participants.length < lobbyInfo.max_players) {
+                    alert('Не все игроки в лобби');
+                    return;
+                }
+                showScreen('vote');
+                await loadVotes();
+                supabase
+                    .channel(`votes-${lobbyId}`)
+                    .on('postgres_changes', {
+                        event: '*',
+                        schema: 'public',
+                        table: 'lobby_votes',
+                        filter: `lobby_id=eq.${lobbyId}`
+                    }, handleVoteChange)
+                    .subscribe();
+            };
+
+            async function loadVotes() {
+                const { data: votes } = await supabase
+                    .from('lobby_votes')
+                    .select('*')
+                    .eq('lobby_id', lobbyId);
+                const maps = mapsByMode[lobbyInfo.mode] || [];
+                voteCounts = {};
+                maps.forEach(m => voteCounts[m] = 0);
+                votes.forEach(v => { if (voteCounts.hasOwnProperty(v.map_name)) voteCounts[v.map_name]++; });
+                renderVoteGrid();
+            }
+
+            function renderVoteGrid() {
+                const maps = mapsByMode[lobbyInfo.mode] || [];
+                const container = document.getElementById('vote-grid');
+                container.innerHTML = maps.map(map => `
+                    <div class="map-card ${selectedMap === map ? 'selected' : ''}" onclick="castVote('${map}')">
+                        <div class="map-image" style="background: repeating-linear-gradient(45deg, ${mapColors[map] || mapColors.default}80, ${mapColors[map] || mapColors.default}80 8px, ${mapColors[map] || mapColors.default}40 8px, ${mapColors[map] || mapColors.default}40 16px); display: flex; align-items: center; justify-content: center; font-size: 2rem;">
+                            ${map.substring(0,3).toUpperCase()}
+                        </div>
+                        <h3>${map.toUpperCase()}</h3>
+                        <div class="votes" id="vote-${map}">${voteCounts[map] || 0} голосов</div>
+                    </div>
+                `).join('');
+            }
+
+            function handleVoteChange(payload) {
+                if (payload.eventType === 'INSERT' && voteCounts.hasOwnProperty(payload.new.map_name)) {
+                    voteCounts[payload.new.map_name]++;
+                } else if (payload.eventType === 'DELETE' && voteCounts.hasOwnProperty(payload.old.map_name)) {
+                    voteCounts[payload.old.map_name]--;
+                }
+                renderVoteGrid();
+            }
+
+            window.castVote = async function(map) {
+                await supabase.from('lobby_votes').delete().eq('user_id', currentUserId).eq('lobby_id', lobbyId);
+                await supabase.from('lobby_votes').insert({
+                    lobby_id: lobbyId,
+                    user_id: currentUserId,
+                    map_name: map
+                });
+                selectedMap = map;
+            };
+
+            window.confirmMap = async function() {
+                if (!isHost) return;
+                let maxVotes = -1;
+                let winner = mapsByMode[lobbyInfo.mode][0];
+                for (let [map, count] of Object.entries(voteCounts)) {
+                    if (count > maxVotes) {
+                        maxVotes = count;
+                        winner = map;
+                    }
+                }
+                matchMap = winner;
+                await supabase.from('active_lobbies').update({ status: 'playing' }).eq('lobby_id', lobbyId);
+                showScreen('match');
+            };
+
+            // Статистика (упрощённая)
+            window.confirmEndMatch = function() {
+                openModal('Завершить матч и перейти к статистике?', () => {
+                    showScreen('results');
+                    prepareStatsTable();
+                });
+            };
+
+            function prepareStatsTable() {
+                const teamSize = lobbyInfo.max_players / 2;
+                statsPlayers = participants.map((p, idx) => ({
+                    ...p,
+                    team: idx < teamSize ? 'A' : 'B',
+                    eloDiff: idx < teamSize ? 25 : -25 // по умолчанию победитель +25, проигравший -25
+                }));
+                const tbody = document.getElementById('stats-body');
+                tbody.innerHTML = statsPlayers.map(p => `
+                    <tr>
+                        <td><b>${p.profiles.username}</b></td>
+                        <td>
+                            <select class="team-select" data-user="${p.user_id}">
+                                <option value="A" ${p.team==='A'?'selected':''}>A</option>
+                                <option value="B" ${p.team==='B'?'selected':''}>B</option>
+                            </select>
+                        </td>
+                        <td><input type="number" class="elo-input" data-user="${p.user_id}" value="${p.eloDiff}" min="-100" max="100" step="1"></td>
+                    </tr>
+                `).join('');
+
+                // При изменении выбора победителя обновляем значения по умолчанию
+                document.getElementById('winner-team').addEventListener('change', updateDefaultElo);
+                document.querySelectorAll('.team-select').forEach(sel => sel.addEventListener('change', updateDefaultElo));
+            }
+
+            function updateDefaultElo() {
+                const winnerTeam = document.getElementById('winner-team').value;
+                statsPlayers.forEach(p => {
+                    const teamSelect = document.querySelector(`.team-select[data-user="${p.user_id}"]`);
+                    if (teamSelect) {
+                        const team = teamSelect.value;
+                        const defaultDiff = team === winnerTeam ? 25 : -25;
+                        const eloInput = document.querySelector(`.elo-input[data-user="${p.user_id}"]`);
+                        if (eloInput) {
+                            // Меняем только если поле ещё не редактировали? Можно всегда перезаписывать, но пользователь может захотеть своё.
+                            // Здесь просто устанавливаем значение по умолчанию при изменении команды или победителя.
+                            eloInput.value = defaultDiff;
+                        }
+                    }
+                });
+            }
+
+            window.confirmSaveStats = function() {
+                openModal('Сохранить статистику?', saveMatchResults);
+            };
+
+            async function saveMatchResults() {
+                const winnerTeam = document.getElementById('winner-team').value;
+                const rounds = document.getElementById('rounds').value.trim() || '16:10';
+
+                for (let p of participants) {
+                    const teamSelect = document.querySelector(`.team-select[data-user="${p.user_id}"]`);
+                    const eloInput = document.querySelector(`.elo-input[data-user="${p.user_id}"]`);
+                    if (!teamSelect || !eloInput) continue;
+
+                    const team = teamSelect.value;
+                    const eloDiff = parseInt(eloInput.value) || 0;
+                    const isWin = (team === winnerTeam);
+
+                    // Обновляем профиль
+                    const { data: profile } = await supabase.from('profiles').select('elo, sk_id, matches').eq('id', p.user_id).single();
+                    if (profile) {
+                        const newElo = profile.elo + eloDiff;
+                        const newMatches = (profile.matches || 0) + 1;
+                        await supabase.from('profiles').update({ 
+                            elo: newElo,
+                            matches: newMatches
+                        }).eq('id', p.user_id);
+
+                        // Запись в историю матчей
+                        await supabase.from('match_history').insert({
+                            custom_user_id: profile.sk_id,
+                            map_name: matchMap,
+                            elo_diff: eloDiff,
+                            is_win: isWin,
+                            rounds: rounds
+                        });
+                    }
+                }
+
+                // Удаляем лобби
+                await supabase.from('active_lobbies').delete().eq('lobby_id', lobbyId);
+                window.location.href = 'play.html';
+            }
+
+            // Инициализация
+            try {
+                const { data: profile } = await supabase.from('profiles').select('*').eq('id', currentUserId).single();
+                if (!profile) throw new Error('Профиль не найден');
+                myProfile = profile;
+
+                const { data: lobby } = await supabase.from('active_lobbies').select('*').eq('lobby_id', lobbyId).single();
+                if (!lobby) throw new Error('Лобби не существует');
+                lobbyInfo = lobby;
+
+                document.getElementById('lobby-id-display').innerText = lobbyId;
+                document.getElementById('mode-display').innerText = lobbyInfo.mode.replace('vs', ' VS ');
+
+                await registerSelf();
+                await loadParticipants();
+
+                supabase
+                    .channel(`participants-${lobbyId}`)
+                    .on('postgres_changes', {
+                        event: '*',
+                        schema: 'public',
+                        table: 'lobby_participants',
+                        filter: `lobby_id=eq.${lobbyId}`
+                    }, async () => {
+                        await loadParticipants();
+                        if (participants.length === 0) window.location.href = 'play.html';
+                    })
+                    .subscribe();
+
+                supabase
+                    .channel(`messages-${lobbyId}`)
+                    .on('postgres_changes', {
+                        event: 'INSERT',
+                        schema: 'public',
+                        table: 'lobby_messages',
+                        filter: `lobby_id=eq.${lobbyId}`
+                    }, handleNewMessage)
+                    .subscribe();
+
+                document.getElementById('start-match-btn').style.display = isHost ? 'block' : 'none';
+                document.getElementById('chat-in').addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') sendChat();
+                });
+            } catch (err) {
+                console.error(err);
+                alert('Ошибка загрузки: ' + err.message);
+                window.location.href = 'play.html';
+            }
+        })();
+    </script>
+</body>
+</html>

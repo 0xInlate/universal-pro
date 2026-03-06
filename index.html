@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Universal Pro | StandKnife</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;800&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary: #ff4d94;
+            --secondary: #ff75a0;
+            --error: #ff3333;
+            --glass: rgba(255, 255, 255, 0.1);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Montserrat', sans-serif; }
+
+        body {
+            background: radial-gradient(circle at top right, #2d1b4e, #0f0c29);
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            overflow: hidden;
+        }
+
+        .bg-circle {
+            position: absolute;
+            width: 400px;
+            height: 400px;
+            background: var(--primary);
+            filter: blur(120px);
+            border-radius: 50%;
+            z-index: -1;
+            opacity: 0.4;
+            animation: pulse 8s infinite alternate;
+        }
+
+        @keyframes pulse {
+            0% { transform: translate(-50%, -50%) scale(1); }
+            100% { transform: translate(20%, 30%) scale(1.2); }
+        }
+
+        .container {
+            background: var(--glass);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            padding: 40px;
+            border-radius: 24px;
+            width: 100%;
+            max-width: 420px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
+            animation: fadeIn 0.8s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        h1 { font-weight: 800; font-size: 2rem; margin-bottom: 5px; color: var(--primary); text-shadow: 0 0 15px rgba(255, 77, 148, 0.5); text-align: center; }
+        p.subtitle { text-align: center; font-size: 0.9rem; color: #aaa; margin-bottom: 25px; }
+
+        .input-group { position: relative; margin-bottom: 15px; }
+        
+        input {
+            width: 100%;
+            padding: 14px 16px;
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            color: white;
+            font-size: 1rem;
+            transition: 0.3s;
+        }
+
+        input:focus {
+            border-color: var(--primary);
+            background: rgba(0, 0, 0, 0.3);
+            outline: none;
+            box-shadow: 0 0 15px rgba(255, 77, 148, 0.2);
+        }
+
+        /* Стиль для автозаполняемого ID */
+        input[readonly] {
+            background: rgba(255, 255, 255, 0.05);
+            color: #888;
+            cursor: not-allowed;
+            border-style: dashed;
+        }
+
+        button {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            border: none;
+            border-radius: 12px;
+            color: white;
+            font-weight: 700;
+            font-size: 1rem;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: 0.4s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(255, 77, 148, 0.4);
+        }
+
+        .toggle-link {
+            margin-top: 20px;
+            font-size: 0.9rem;
+            text-align: center;
+            color: #ccc;
+            cursor: pointer;
+        }
+
+        .toggle-link span { color: var(--primary); font-weight: 600; text-decoration: underline; }
+
+        .msg {
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-size: 0.85rem;
+            display: none;
+            text-align: center;
+        }
+        .msg-error { background: rgba(255, 51, 51, 0.2); color: #ff9999; border: 1px solid var(--error); }
+        .msg-success { background: rgba(0, 255, 100, 0.1); color: #aaffaa; border: 1px solid #00ff64; }
+
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+
+    <div class="bg-circle"></div>
+
+    <div class="container">
+        <h1>UNIVERSAL PRO</h1>
+        <p class="subtitle" id="form-subtitle">Регистрация в системе Faceit</p>
+        
+        <div id="status-msg" class="msg"></div>
+
+        <form id="register-form">
+            <div class="input-group"><input type="text" id="reg-nick" placeholder="Ваш никнейм" required></div>
+            <div class="input-group">
+                <input type="text" id="reg-skid" placeholder="ID (генерируется автоматически)" readonly>
+            </div>
+            <div class="input-group"><input type="text" id="reg-login" placeholder="Придумайте логин" required></div>
+            <div class="input-group"><input type="password" id="reg-pass" placeholder="Пароль (мин. 6 знаков)" required></div>
+            <button type="submit" id="reg-btn">Создать профиль</button>
+            <p class="toggle-link" onclick="toggleForm()">Уже есть аккаунт? <span>Войти</span></p>
+        </form>
+
+        <form id="login-form" class="hidden">
+            <div class="input-group"><input type="text" id="log-login" placeholder="Логин" required></div>
+            <div class="input-group"><input type="password" id="log-pass" placeholder="Пароль" required></div>
+            <button type="submit">Начать игру</button>
+            <p class="toggle-link" onclick="toggleForm()">Новый игрок? <span>Зарегистрироваться</span></p>
+        </form>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://tkssxjolplmcfsbcjwme.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRrc3N4am9scGxtY2ZzYmNqd21lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIwMjkwMzQsImV4cCI6MjA4NzYwNTAzNH0.ZQ978i3haK8pPOouvnH4sgK7dxFKRby_UfaOgzP1VvY';
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        const msgBox = document.getElementById('status-msg');
+
+        function showMsg(text, isError = true) {
+            msgBox.innerText = text;
+            msgBox.className = isError ? 'msg msg-error' : 'msg msg-success';
+            msgBox.style.display = 'block';
+        }
+
+        function toggleForm() {
+            document.getElementById('register-form').classList.toggle('hidden');
+            document.getElementById('login-form').classList.toggle('hidden');
+            const sub = document.getElementById('form-subtitle');
+            sub.innerText = sub.innerText === 'Авторизация в системе' ? 'Регистрация в системе Faceit' : 'Авторизация в системе';
+            msgBox.style.display = 'none';
+        }
+
+        // РЕГИСТРАЦИЯ
+        document.getElementById('register-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            msgBox.style.display = 'none';
+            const btn = document.getElementById('reg-btn');
+            btn.disabled = true; // Защита от двойного клика
+
+            const username = document.getElementById('reg-nick').value.trim();
+            const login = document.getElementById('reg-login').value.trim();
+            const password = document.getElementById('reg-pass').value;
+
+            if (password.length < 6) {
+                btn.disabled = false;
+                return showMsg('Пароль должен быть не короче 6 символов!');
+            }
+
+            try {
+                // 1. Проверяем, не занят ли логин
+                const { data: userCheck } = await _supabase.from('profiles').select('login').eq('login', login).maybeSingle();
+                if (userCheck) {
+                    btn.disabled = false;
+                    return showMsg('Этот логин уже занят!');
+                }
+
+                // 2. Получаем ПОСЛЕДНИЙ (максимальный) sk_id из базы
+                const { data: lastProfile, error: fetchError } = await _supabase
+                    .from('profiles')
+                    .select('sk_id')
+                    .order('sk_id', { ascending: false })
+                    .limit(1)
+                    .maybeSingle();
+
+                // Если в базе еще никого нет, начинаем с 100000000, иначе прибавляем 1
+                let newSkId = lastProfile ? parseInt(lastProfile.sk_id) + 1 : 100000001;
+
+                // 3. Создаем профиль
+                const { data, error } = await _supabase
+                    .from('profiles')
+                    .insert([{ 
+                        username, 
+                        sk_id: newSkId, 
+                        login, 
+                        password,
+                        elo: 0 // Сразу ставим 0, чтобы был 1 уровень
+                    }])
+                    .select();
+
+                if (error) throw error;
+
+                showMsg('Регистрация успешна! Ваш ID: ' + newSkId, false);
+                localStorage.setItem('pro_user_id', data[0].id);
+                setTimeout(() => { window.location.href = 'menu.html'; }, 2000);
+
+            } catch (err) {
+                btn.disabled = false;
+                showMsg('Ошибка: ' + err.message);
+            }
+        });
+
+        // ВХОД
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const login = document.getElementById('log-login').value;
+            const password = document.getElementById('log-pass').value;
+
+            const { data, error } = await _supabase
+                .from('profiles')
+                .select('*')
+                .eq('login', login)
+                .eq('password', password)
+                .single();
+
+            if (data) {
+                showMsg('Успешный вход! Загрузка...', false);
+                localStorage.setItem('pro_user_id', data.id);
+                setTimeout(() => { window.location.href = 'menu.html'; }, 1000);
+            } else {
+                showMsg('Неверный логин или пароль!');
+            }
+        });
+    </script>
+</body>
+</html>

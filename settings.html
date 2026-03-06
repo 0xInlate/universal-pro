@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Universal Pro | Settings</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #ff4d94;
+            --glass: rgba(255,255,255,0.07);
+            --border: rgba(255,255,255,0.15);
+        }
+        * { margin:0; padding:0; box-sizing:border-box; font-family:'Montserrat',sans-serif; }
+        body {
+            background: #080710; color:white; display:flex; height:100vh; overflow:hidden;
+        }
+        .sidebar {
+            width:240px; background:rgba(0,0,0,0.85); border-right:1px solid var(--border);
+            display:flex; flex-direction:column; padding:20px 10px; backdrop-filter:blur(20px);
+        }
+        .sidebar-logo {
+            font-weight:900; color:var(--primary); text-align:center; margin-bottom:35px;
+            font-size:1.3rem; text-shadow:0 0 10px rgba(255,77,148,0.3);
+        }
+        .nav-item {
+            width:100%; padding:14px 18px; margin-bottom:8px; display:flex; align-items:center; gap:12px;
+            border-radius:12px; cursor:pointer; transition:0.3s; color:#777; font-weight:600; text-decoration:none;
+        }
+        .nav-item:hover, .nav-item.active { background:var(--glass); color:white; border-left:4px solid var(--primary); }
+        main {
+            flex:1; padding:40px; background: radial-gradient(circle at 10% 10%, #1a1025 0%, #080710 100%);
+            overflow-y:auto; display:flex; justify-content:center; align-items:center;
+        }
+        .settings-container {
+            max-width:600px; width:100%; background:var(--glass); border:1px solid var(--border);
+            border-radius:24px; padding:30px; backdrop-filter:blur(10px);
+            text-align:center;
+        }
+        h1 { margin-bottom:30px; font-weight:900; color:var(--primary); }
+        .info-block { margin:20px 0; padding:15px; background:rgba(0,0,0,0.2); border-radius:15px; }
+        .tg-button {
+            display:inline-block; background:var(--primary); color:white; padding:12px 30px;
+            border-radius:30px; text-decoration:none; font-weight:900; margin:10px 0;
+            transition:0.3s; border:none; cursor:pointer;
+        }
+        .tg-button:hover { transform:scale(1.05); filter:brightness(1.1); }
+        .version { color:var(--primary); font-weight:900; font-size:1.2rem; margin:10px 0; }
+        .credits { color:#aaa; font-size:0.8rem; line-height:1.6; margin-top:20px; }
+        .heart { color:var(--primary); display:inline-block; animation:pulse 1.5s infinite; }
+        @keyframes pulse { 0% { transform:scale(1); } 50% { transform:scale(1.2); } 100% { transform:scale(1); } }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <div class="sidebar-logo">UNIVERSAL PRO</div>
+        <a href="menu.html" class="nav-item"><i class="fa-solid fa-user"></i> Профиль</a>
+        <a href="play.html" class="nav-item"><i class="fa-solid fa-gamepad"></i> Играть</a>
+        <a href="friends.html" class="nav-item"><i class="fa-solid fa-users"></i> Друзья</a>
+        <a href="clans.html" class="nav-item"><i class="fa-solid fa-shield-halved"></i> Кланы</a>
+        <a href="settings.html" class="nav-item active"><i class="fa-solid fa-gear"></i> Настройки</a>
+        <div class="nav-item" style="margin-top: auto;" onclick="logout()"><i class="fa-solid fa-right-from-bracket"></i> Выход</div>
+    </div>
+    <main>
+        <div class="settings-container">
+            <h1>НАСТРОЙКИ</h1>
+            
+            <div class="info-block">
+                <h3>Telegram канал</h3>
+                <p>Подписывайся на новости и обновления!</p>
+                <a href="https://t.me/universal_pro_faceit" target="_blank" class="tg-button">
+                    <i class="fa-brands fa-telegram"></i> ПОДПИСАТЬСЯ
+                </a>
+            </div>
+
+            <div class="version">
+                Версия v0.1.0
+            </div>
+
+            <div class="credits">
+                <p>При поддержке: Gemini; DeepSeek; My brain; Scam SK; SkFamily; 50/50 halakost; StandKnife.</p>
+                <p>Создатели: <a href="https://t.me/Li2cpp" target="_blank" style="color:var(--primary);">@Li2cpp</a>; <a href="https://t.me/whenfalse" target="_blank" style="color:var(--primary);">@whenfalse</a>.</p>
+                <p>by with love <span class="heart">❤️</span></p>
+            </div>
+        </div>
+    </main>
+    <script>
+        const currentUserId = localStorage.getItem('pro_user_id');
+        if (!currentUserId) window.location.href = 'index.html';
+        function logout() { localStorage.removeItem('pro_user_id'); window.location.href = 'index.html'; }
+    </script>
+</body>
+</html>
