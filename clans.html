@@ -533,6 +533,73 @@
         #clan-avatar-input {
             display: none;
         }
+
+        /* ===== АДАПТАЦИЯ ПОД ТЕЛЕФОНЫ ===== */
+        @media screen and (max-width: 768px) {
+            body {
+                flex-direction: column;
+            }
+            .sidebar {
+                width: 100%;
+                flex-direction: row;
+                overflow-x: auto;
+                padding: 10px;
+                gap: 5px;
+                border-right: none;
+                border-bottom: 1px solid var(--border);
+            }
+            .sidebar-logo {
+                font-size: 1rem;
+                margin-bottom: 0;
+                margin-right: 10px;
+                white-space: nowrap;
+            }
+            .nav-item {
+                padding: 8px 12px;
+                margin-bottom: 0;
+                white-space: nowrap;
+                font-size: 0.8rem;
+            }
+            main {
+                padding: 15px;
+            }
+            .page-header {
+                flex-direction: column;
+                gap: 10px;
+            }
+            .page-header h1 {
+                font-size: 1.6rem;
+            }
+            .create-btn {
+                width: 100%;
+            }
+            .search-bar {
+                flex-direction: column;
+            }
+            .search-bar button {
+                width: 100%;
+            }
+            .clans-grid {
+                grid-template-columns: 1fr;
+            }
+            .clan-detail-header {
+                flex-direction: column;
+                text-align: center;
+            }
+            .clan-detail-stats {
+                justify-content: center;
+            }
+            .members-grid {
+                grid-template-columns: 1fr;
+            }
+            .action-buttons {
+                flex-direction: column;
+            }
+            .modal {
+                min-width: auto;
+                width: 90%;
+            }
+        }
     </style>
 </head>
 <body>
@@ -630,7 +697,6 @@
         let currentMembers = [];
         let currentRequests = [];
 
-        // Загружаем профиль для отображения (не используется для проверки пароля)
         (async function() {
             await loadUserProfile();
             await loadClans();
@@ -641,7 +707,6 @@
             if (data) currentUserProfile = data;
         }
 
-        // Загрузка списка кланов (исправленная версия)
         async function loadClans(search = '') {
             const container = document.getElementById('clans-list');
             container.innerHTML = '<div class="loader">Загрузка...</div>';
@@ -688,7 +753,6 @@
             loadClans(search);
         };
 
-        // Переход к детальному просмотру
         window.viewClan = async function(clanId) {
             currentClanId = clanId;
             document.getElementById('scr-list').classList.remove('active');
@@ -700,7 +764,6 @@
             const container = document.getElementById('clan-detail-container');
             container.innerHTML = '<div class="loader">Загрузка...</div>';
             try {
-                // Загружаем клан
                 const { data: clan, error: clanErr } = await supabase
                     .from('clans')
                     .select('*')
@@ -709,7 +772,6 @@
                 if (clanErr) throw clanErr;
                 currentClan = clan;
 
-                // Загружаем участников
                 const { data: members, error: membersErr } = await supabase
                     .from('clan_members')
                     .select('*, profiles(*)')
@@ -717,7 +779,6 @@
                 if (membersErr) throw membersErr;
                 currentMembers = members || [];
 
-                // Загружаем заявки, если текущий пользователь лидер
                 let requests = [];
                 if (isCurrentUserLeader()) {
                     const { data: reqs, error: reqErr } = await supabase
@@ -819,10 +880,8 @@
             `;
         }
 
-        // Подача заявки
         window.joinClan = async function() {
             if (!currentClanId) return;
-            // Проверяем, не состоит ли уже в каком-то клане
             const { data: existing } = await supabase.from('clan_members').select('id').eq('user_id', currentUserId).maybeSingle();
             if (existing) {
                 alert('Вы уже состоите в клане');
@@ -840,7 +899,6 @@
             }
         };
 
-        // Обработка заявок (лидер)
         window.handleRequest = async function(requestId, action) {
             if (action === 'accept') {
                 const { data: req } = await supabase.from('clan_requests').select('*').eq('id', requestId).single();
@@ -856,7 +914,6 @@
             await loadClanDetail(currentClanId);
         };
 
-        // Модалка изменения роли
         let targetUserIdForRole = null;
         window.openRoleModal = function(userId, currentRole) {
             targetUserIdForRole = userId;
@@ -875,7 +932,6 @@
             await loadClanDetail(currentClanId);
         };
 
-        // Подготовка модалки передачи лидерства
         function prepareTransferModal(selectedUserId) {
             const members = currentMembers.filter(m => m.user_id !== currentUserId);
             const select = document.getElementById('transfer-select');
@@ -893,17 +949,13 @@
         document.getElementById('transfer-confirm').onclick = async function() {
             const newLeaderId = document.getElementById('transfer-select').value;
             if (!newLeaderId) return;
-            // Сбрасываем всех лидеров (должен быть один)
             await supabase.from('clan_members').update({ role: 'member' }).eq('clan_id', currentClanId);
-            // Назначаем нового лидера
             await supabase.from('clan_members').update({ role: 'leader' }).eq('user_id', newLeaderId).eq('clan_id', currentClanId);
-            // Обновляем leader_id в таблице кланов
             await supabase.from('clans').update({ leader_id: newLeaderId }).eq('id', currentClanId);
             closeModal('transfer-modal');
             await loadClanDetail(currentClanId);
         };
 
-        // Загрузка аватарки клана (только лидер)
         window.openAvatarUpload = function() {
             document.getElementById('clan-avatar-input').click();
         };
@@ -919,7 +971,6 @@
             reader.readAsDataURL(file);
         };
 
-        // Создание клана (с паролем)
         window.openCreateClanModal = function() {
             document.getElementById('create-clan-modal').style.display = 'flex';
         };
@@ -944,14 +995,12 @@
                 return;
             }
 
-            // Проверка уникальности тега
             const { data: existing } = await supabase.from('clans').select('id').eq('tag', tag).maybeSingle();
             if (existing) {
                 alert('Тег уже используется');
                 return;
             }
 
-            // Создаём клан
             const { data: newClan, error } = await supabase.from('clans').insert({
                 name,
                 tag,
@@ -965,7 +1014,6 @@
                 return;
             }
 
-            // Добавляем создателя как лидера
             await supabase.from('clan_members').insert({
                 clan_id: newClan.id,
                 user_id: currentUserId,
@@ -977,7 +1025,6 @@
             viewClan(newClan.id);
         };
 
-        // Навигация
         window.showList = function() {
             document.getElementById('scr-detail').classList.remove('active');
             document.getElementById('scr-list').classList.add('active');
@@ -988,7 +1035,6 @@
             document.getElementById(modalId).style.display = 'none';
         };
 
-        // Выход
         window.logout = function() {
             localStorage.removeItem('pro_user_id');
             window.location.href = 'index.html';

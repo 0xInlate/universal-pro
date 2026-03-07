@@ -637,6 +637,75 @@
             padding: 40px;
             color: #777;
         }
+
+        /* ===== АДАПТАЦИЯ ПОД ТЕЛЕФОНЫ ===== */
+        @media screen and (max-width: 768px) {
+            body {
+                flex-direction: column;
+            }
+            .sidebar {
+                width: 100%;
+                flex-direction: row;
+                overflow-x: auto;
+                padding: 10px;
+                gap: 5px;
+                border-right: none;
+                border-bottom: 1px solid var(--border);
+            }
+            .sidebar-logo {
+                font-size: 1rem;
+                margin-bottom: 0;
+                margin-right: 10px;
+                white-space: nowrap;
+            }
+            .nav-item {
+                padding: 8px 12px;
+                margin-bottom: 0;
+                white-space: nowrap;
+                font-size: 0.8rem;
+            }
+            main {
+                padding: 70px 15px 15px 15px;
+            }
+            .server-info, .player-count {
+                top: 10px;
+                font-size: 0.7rem;
+                padding: 4px 10px;
+            }
+            .lobby-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+            .lobby-header h2 {
+                font-size: 1.5rem;
+            }
+            .mode-badge {
+                font-size: 0.8rem;
+                padding: 5px 15px;
+            }
+            .players-grid {
+                grid-template-columns: repeat(2, 1fr) !important; /* 2 колонки на мобилках */
+                gap: 8px;
+            }
+            .player-card {
+                width: 100%;
+            }
+            .chat-area {
+                position: static;
+                width: 100%;
+                margin-top: 20px;
+                height: 200px;
+            }
+            .start-btn {
+                position: static;
+                width: 100%;
+                margin-top: 15px;
+            }
+            .vote-grid {
+                grid-template-columns: 1fr;
+            }
+        }
     </style>
 </head>
 <body>
@@ -752,7 +821,7 @@
             let selectedMap = null;
             let voteCounts = {};
             let matchMap = null;
-            let statsPlayers = []; // для экрана статистики
+            let statsPlayers = [];
 
             const mapsByMode = {
                 '1vs1': ['bridge', 'pool', 'temple', 'yard'],
@@ -1011,7 +1080,7 @@
                 statsPlayers = participants.map((p, idx) => ({
                     ...p,
                     team: idx < teamSize ? 'A' : 'B',
-                    eloDiff: idx < teamSize ? 25 : -25 // по умолчанию победитель +25, проигравший -25
+                    eloDiff: idx < teamSize ? 25 : -25
                 }));
                 const tbody = document.getElementById('stats-body');
                 tbody.innerHTML = statsPlayers.map(p => `
@@ -1027,7 +1096,6 @@
                     </tr>
                 `).join('');
 
-                // При изменении выбора победителя обновляем значения по умолчанию
                 document.getElementById('winner-team').addEventListener('change', updateDefaultElo);
                 document.querySelectorAll('.team-select').forEach(sel => sel.addEventListener('change', updateDefaultElo));
             }
@@ -1041,8 +1109,6 @@
                         const defaultDiff = team === winnerTeam ? 25 : -25;
                         const eloInput = document.querySelector(`.elo-input[data-user="${p.user_id}"]`);
                         if (eloInput) {
-                            // Меняем только если поле ещё не редактировали? Можно всегда перезаписывать, но пользователь может захотеть своё.
-                            // Здесь просто устанавливаем значение по умолчанию при изменении команды или победителя.
                             eloInput.value = defaultDiff;
                         }
                     }
@@ -1066,7 +1132,6 @@
                     const eloDiff = parseInt(eloInput.value) || 0;
                     const isWin = (team === winnerTeam);
 
-                    // Обновляем профиль
                     const { data: profile } = await supabase.from('profiles').select('elo, sk_id, matches').eq('id', p.user_id).single();
                     if (profile) {
                         const newElo = profile.elo + eloDiff;
@@ -1076,7 +1141,6 @@
                             matches: newMatches
                         }).eq('id', p.user_id);
 
-                        // Запись в историю матчей
                         await supabase.from('match_history').insert({
                             custom_user_id: profile.sk_id,
                             map_name: matchMap,
@@ -1087,7 +1151,6 @@
                     }
                 }
 
-                // Удаляем лобби
                 await supabase.from('active_lobbies').delete().eq('lobby_id', lobbyId);
                 window.location.href = 'play.html';
             }

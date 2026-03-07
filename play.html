@@ -26,7 +26,7 @@
             background-image: radial-gradient(circle at 10% 10%, #1a1025 0%, #080710 100%);
         }
 
-        /* --- SIDEBAR (полностью скопирована из menu.html) --- */
+        /* --- SIDEBAR --- */
         .sidebar {
             width: 240px;
             background: rgba(0, 0, 0, 0.85);
@@ -35,7 +35,7 @@
             flex-direction: column;
             padding: 20px 10px;
             backdrop-filter: blur(20px);
-            z-index: 10;
+            z-index: 1000;
         }
 
         .sidebar-logo {
@@ -85,6 +85,57 @@
         .grid-select { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 20px; }
         .opt { background: rgba(255,255,255,0.05); padding: 12px; border-radius: 10px; cursor: pointer; font-weight: 800; font-size: 0.75rem; border: 1px solid transparent; }
         .opt.active { border-color: var(--primary); background: rgba(255, 77, 148, 0.1); }
+
+        /* ===== АДАПТАЦИЯ ПОД ТЕЛЕФОНЫ ===== */
+        @media screen and (max-width: 768px) {
+            body {
+                flex-direction: column;
+            }
+            .sidebar {
+                width: 100%;
+                flex-direction: row;
+                overflow-x: auto;
+                padding: 10px;
+                gap: 5px;
+                border-right: none;
+                border-bottom: 1px solid var(--border);
+            }
+            .sidebar-logo {
+                font-size: 1rem;
+                margin-bottom: 0;
+                margin-right: 10px;
+                white-space: nowrap;
+            }
+            .nav-item {
+                padding: 8px 12px;
+                margin-bottom: 0;
+                white-space: nowrap;
+                font-size: 0.8rem;
+            }
+            main {
+                padding: 20px;
+            }
+            .welcome-header {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 15px;
+            }
+            .welcome-header h1 {
+                font-size: 1.8rem;
+            }
+            .btn-join {
+                width: 100%;
+            }
+            .modes-container {
+                grid-template-columns: 1fr;
+            }
+            .server-browser {
+                overflow-x: auto;
+            }
+            .server-table {
+                min-width: 600px;
+            }
+        }
     </style>
 </head>
 <body>

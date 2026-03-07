@@ -97,7 +97,7 @@
         
         .id-badge { color: #555; font-size: 0.75rem; margin-top: 2px; font-weight: 600; }
 
-        /* Clan badge - new */
+        /* Clan badge */
         .clan-badge {
             margin-top: 5px;
             font-size: 0.8rem;
@@ -176,10 +176,65 @@
         .log-item p { font-size: 0.8rem; color: #aaa; line-height: 1.4; }
 
         #avatar-input { display: none; }
+
+        /* ===== АДАПТАЦИЯ ПОД ТЕЛЕФОНЫ ===== */
+        @media screen and (max-width: 768px) {
+            body {
+                flex-direction: column;
+            }
+            .sidebar {
+                width: 100%;
+                flex-direction: row;
+                overflow-x: auto;
+                padding: 10px;
+                gap: 5px;
+                border-right: none;
+                border-bottom: 1px solid var(--border);
+            }
+            .sidebar-logo {
+                font-size: 1rem;
+                margin-bottom: 0;
+                margin-right: 10px;
+                white-space: nowrap;
+            }
+            .nav-item {
+                padding: 8px 12px;
+                margin-bottom: 0;
+                white-space: nowrap;
+                font-size: 0.8rem;
+            }
+            main {
+                grid-template-columns: 1fr;
+                padding: 15px;
+            }
+            .right-side {
+                display: none; /* changelog скрываем на мобилках */
+            }
+            .user-main {
+                flex-direction: column;
+                text-align: center;
+                gap: 15px;
+            }
+            .avatar-box {
+                margin: 0 auto;
+            }
+            .nick-container {
+                justify-content: center;
+            }
+            .id-badge {
+                text-align: center;
+            }
+            .clan-badge {
+                display: block;
+                text-align: center;
+            }
+            .faceit-grid {
+                grid-template-columns: 1fr;
+            }
+        }
     </style>
 </head>
 <body>
-
     <div class="sidebar">
         <div class="sidebar-logo">UNIVERSAL PRO</div>
         <a href="#" class="nav-item active"><i class="fa-solid fa-user"></i> Профиль</a>
@@ -364,7 +419,7 @@
                 
                 if (user.avatar_data) document.getElementById('u-avatar').src = user.avatar_data;
                 loadMatchHistory(user.sk_id);
-                loadUserClan(); // загружаем клан
+                loadUserClan();
             }
             
             const { data: logs } = await _supabase.from('changelog').select('*').order('date', {ascending: false});

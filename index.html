@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+\<!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
@@ -136,6 +136,16 @@
         .msg-success { background: rgba(0, 255, 100, 0.1); color: #aaffaa; border: 1px solid #00ff64; }
 
         .hidden { display: none; }
+
+        /* ===== АДАПТАЦИЯ ПОД ТЕЛЕФОНЫ ===== */
+        @media screen and (max-width: 768px) {
+            .container {
+                padding: 20px;
+                margin: 0 15px;
+            }
+            h1 { font-size: 1.6rem; }
+            .subtitle { font-size: 0.8rem; }
+        }
     </style>
 </head>
 <body>
@@ -193,7 +203,7 @@
             e.preventDefault();
             msgBox.style.display = 'none';
             const btn = document.getElementById('reg-btn');
-            btn.disabled = true; // Защита от двойного клика
+            btn.disabled = true;
 
             const username = document.getElementById('reg-nick').value.trim();
             const login = document.getElementById('reg-login').value.trim();
@@ -212,16 +222,18 @@
                     return showMsg('Этот логин уже занят!');
                 }
 
-                // 2. Получаем ПОСЛЕДНИЙ (максимальный) sk_id из базы
-                const { data: lastProfile, error: fetchError } = await _supabase
+                // 2. Получаем ПОСЛЕДНИЙ (максимальный) ЧИСЛОВОЙ sk_id из базы
+                const { data: numericProfiles, error: fetchError } = await _supabase
                     .from('profiles')
                     .select('sk_id')
+                    .gte('sk_id', 100000000)
                     .order('sk_id', { ascending: false })
-                    .limit(1)
-                    .maybeSingle();
+                    .limit(1);
 
-                // Если в базе еще никого нет, начинаем с 100000000, иначе прибавляем 1
-                let newSkId = lastProfile ? parseInt(lastProfile.sk_id) + 1 : 100000001;
+                let newSkId = 100000001;
+                if (!fetchError && numericProfiles && numericProfiles.length > 0) {
+                    newSkId = parseInt(numericProfiles[0].sk_id) + 1;
+                }
 
                 // 3. Создаем профиль
                 const { data, error } = await _supabase
@@ -231,7 +243,7 @@
                         sk_id: newSkId, 
                         login, 
                         password,
-                        elo: 0 // Сразу ставим 0, чтобы был 1 уровень
+                        elo: 0
                     }])
                     .select();
 

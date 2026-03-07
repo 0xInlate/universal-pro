@@ -28,7 +28,7 @@
             overflow: hidden;
         }
 
-        /* Sidebar - Полная копия из menu.html */
+        /* Sidebar */
         .sidebar {
             width: 240px;
             background: rgba(0, 0, 0, 0.85);
@@ -151,10 +151,58 @@
         }
         @keyframes toastIn { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
+        /* ===== АДАПТАЦИЯ ПОД ТЕЛЕФОНЫ ===== */
+        @media screen and (max-width: 768px) {
+            body {
+                flex-direction: column;
+            }
+            .sidebar {
+                width: 100%;
+                flex-direction: row;
+                overflow-x: auto;
+                padding: 10px;
+                gap: 5px;
+                border-right: none;
+                border-bottom: 1px solid var(--border);
+            }
+            .sidebar-logo {
+                font-size: 1rem;
+                margin-bottom: 0;
+                margin-right: 10px;
+                white-space: nowrap;
+            }
+            .nav-item {
+                padding: 8px 12px;
+                margin-bottom: 0;
+                white-space: nowrap;
+                font-size: 0.8rem;
+            }
+            main {
+                grid-template-columns: 1fr;
+                padding: 15px;
+            }
+            .right-side {
+                order: -1; /* заявки сверху на мобилке */
+            }
+            .search-bar {
+                flex-direction: column;
+            }
+            .search-bar button {
+                width: 100%;
+                padding: 12px;
+            }
+            #search-preview {
+                flex-direction: column;
+                text-align: center;
+            }
+            .friend-card {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+        }
     </style>
 </head>
 <body>
-
     <div id="toast-container"></div>
 
     <div class="sidebar">
@@ -195,8 +243,7 @@
                 <h2 style="font-weight: 900; letter-spacing: 1px; font-size: 1.2rem; display: flex; align-items: center; gap: 15px;">
                     <i class="fa-solid fa-user-group" style="color: var(--xp-color);"></i> МОИ ДРУЗЬЯ
                 </h2>
-                <div id="friends-list" class="friends-grid">
-                    </div>
+                <div id="friends-list" class="friends-grid"></div>
             </div>
         </div>
 
@@ -205,8 +252,7 @@
                 <h3 style="margin-bottom: 25px; font-weight: 900; font-size: 0.85rem; letter-spacing: 1px; color: var(--primary);">
                     <i class="fa-solid fa-bell"></i> ЗАЯВКИ В ДРУЗЬЯ
                 </h3>
-                <div id="requests-list">
-                    </div>
+                <div id="requests-list"></div>
             </div>
         </div>
     </main>
